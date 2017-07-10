@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9"> <![endif]-->
+<!--[if !IE]><!--> <html lang="en"> <!--<![endif]-->
+<!-- BEGIN HEAD -->
+<head>
+   <meta charset="utf-8" />
+   <title>数据同步</title>
+   <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+   <script src="/js/jquery-1.4.1.js" type="text/javascript"></script>
+   <script src="/js/jquery-1.9.1.min.js" type="text/javascript"></script>
+   <script src="/js/DatePicker/WdatePicker.js" type="text/javascript"></script>
+   <style type="text/css">
+	.searchinput{margin-top:10px;width:100px;}
+	.searchselect{margin-top:10px;width:120px;}
+	.tdinput{margin-top:10px;width:200px;}
+    .white_content {
+    	position:fixed; height:400px; width: 600px;z-index:1002;left:50%;top:50%; 
+    	margin-left:-300px;padding:1px;font-size:12px; 
+    	display:none;
+    }
+   </style>
+   <script type="text/javascript">
+    function usermsgsync(obj)
+    {
+    	alertinfo('lightexport');
+    	$.ajax({
+   	       type: "POST",
+   	       url: "/Systemset/usermsgsync",
+   	       data:"synctype="+obj,
+   	       success: function(msg){
+  	    	   closediv('lightexport');
+       	       if(msg==0){
+           	       alert("数据同步成功！");          	         
+       	       }
+       	       else if(msg==1){
+    	      	   alert("数据同步失败！");
+       	       }
+       	       else if(msg==2)
+       	       {
+           	       alert("只有管理员有权限同步数据！");
+           	   }else{//说明token过期或者token错误，用户需要重新登录
+	  			   window.location.href='/Index/index';
+	  			   return;   
+           	   }
+   	        }
+   	   	});
+    }
+   </script>
+</head>
+<body class="fixed-top">
+   <?php require APPLICATION_PATH.'/views/scripts/index/header.phtml';?>
+   <div id="container" class="row-fluid">
+      <?php require APPLICATION_PATH.'/views/scripts/index/mainleft.phtml';?>
+      <div id="main-content">
+         <!-- BEGIN PAGE CONTAINER-->
+         <div class="container-fluid">
+            <!-- BEGIN PAGE HEADER-->   
+            <div class="row-fluid">
+               <div class="span12">
+                   <h3 class="page-title">数据同步</h3>
+                   <ul class="breadcrumb">
+                       <li>
+                           <a href="/Medicrm/default">首页</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li>
+                           <a href="#">系统设置</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li class="active">数据同步</li>
+                   </ul>
+               </div>
+            </div>
+           
+            <div id="page-wraper">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="widget blue">
+                            <div class="widget-title">
+                                <h4><i class="icon-reorder"></i>数据同步</h4>
+                            </div>
+                             <div style="margin-left:20px;margin-top:10px;">
+                             <button class="btn btn-inverse" <?=empty($_SESSION['loginuser']['crm_UserLavel'])?"":"disabled"?> onclick="usermsgsync(0);">
+                             <i class="icon-refresh icon-white"></i>
+                                                                                同步新用户信息
+                             </button>
+                             
+                             <button class="btn btn-inverse" <?=empty($_SESSION['loginuser']['crm_UserLavel'])?"":"disabled"?>  onclick="usermsgsync(1);">
+                             <i class="icon-refresh icon-white"></i>
+                                                                                同步已有用户信息
+                             </button>
+       		                 </div>
+                            <div class="widget-body" id="w3">
+                            	<font style="color:#FF0000;">&nbsp;&nbsp;*请定期同步用户数据(此权限仅限于管理员)</font>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>     
+         </div>
+      </div>
+   </div>
+   <?php require APPLICATION_PATH.'/views/scripts/index/bottom.phtml';?>
+   <script type="text/javascript" src="/js/jquery-ui-1.9.2.custom.min.js"></script>
+   <script>
+        function loadfun()
+        {
+        	 $("#sjtb").attr("class", "active");
+        	 $("#xtsz").attr("class", "active");
+        }
+        loadfun();
+
+        function alertinfo(id){
+        	$("#fade").css("height",Math.min(document.documentElement.scrollHeight,document.body.scrollHeight));
+        	var obj =document.getElementById(id); 
+        	var W =screen.width;//取得屏幕分辨率宽度
+        	var H =screen.height;//取得屏幕分辨率高度
+        	var yScroll;//取滚动条高度
+        	if(self.pageYOffset){ 
+        		yScroll =self.pageYOffset; 
+        	}
+        	else if(document.documentElement&&document.documentElement.scrollTop){ 
+        		yScroll =document.documentElement.scrollTop; 
+        	}
+        	else if(document.body){
+        		yScroll =document.body.scrollTop; 
+        	}
+        	if(id=='lightexport')
+        	{
+        		obj.style.top=(H/2-90-100)+"px";
+        	}
+        	else
+        	{
+        		obj.style.top=(H/2-90-200)+"px";
+        	}	
+        	document.getElementById("fade").style.display="block";
+        	obj.style.display="block";
+        	var scrollstyle =scrolls();
+        	scrollstyle.style.overflowX="hidden";
+        	//scrollstyle.style.overflowY="auto"; 
+        } 
+        //关闭弹出层	   
+        function closediv(id){	
+        	document.getElementById(id).style.display="none"; 
+        	document.getElementById("fade").style.display="none";
+        	var scrollstyle =scrolls(); 
+        	scrollstyle.style.overflowY="auto"; 
+        	scrollstyle.style.overflowX="hidden";
+        }
+        //取浏览器类型	   
+        function scrolls(){	
+        	var temp_h1 =document.body.clientHeight; 
+        	var temp_h2 =document.documentElement.clientHeight; 
+        	var isXhtml =(temp_h2<=temp_h1&&temp_h2!=0)?true:false; 
+        	var htmlbody =isXhtml?document.documentElement:document.body;
+        	return htmlbody; 
+        }
+   </script>
+    <div id="lightexport" class="white_content" style="display:none;margin-left:-125px;border:0;background-color:white;height:50px; width:250px;border:5px solid #484848;text-align:center;line-height:40px;">
+  <img src="/images/054.gif" style="vertical-align:middle;"/>&nbsp;&nbsp;<font style="font-size:17px;vertical-align:middle;color:#484848">正在同步数据。。。</font>
+  </div>
+  <div id="fade" class="black_overlay"  style="display:none"></div>
+</body>
+</html>
+</body>
+</html>

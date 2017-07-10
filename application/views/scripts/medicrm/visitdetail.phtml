@@ -1,0 +1,397 @@
+
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9"> <![endif]-->
+<!--[if !IE]><!--> <html lang="en"> <!--<![endif]-->
+<!-- BEGIN HEAD -->
+<head>
+   <meta charset="utf-8" />
+   <title>拜访信息</title>
+   <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+   <script src="/js/jquery-1.4.1.js" type="text/javascript"></script>
+   <script src="/js/jquery-1.10.2.js" type="text/javascript"></script>
+   <script src="/js/DatePicker/WdatePicker.js" type="text/javascript"></script>
+   <script src="/js/jquery-ui.js" type="text/javascript"></script>
+   <link rel="stylesheet" href="/css/jquery-ui.css" />
+   <script type="text/javascript">
+   $(function(){
+	   var usernameTags=[];	   
+		 $.ajax({
+				type:"POST",
+				url:"/Medicrm/lstuser",
+				data:"",
+				success:function(msg){
+					var a =eval('('+msg+')');		
+					$.each(a,function(index,array){
+						usernameTags.push(array['crm_ClientName']);
+					});     
+				}
+		 });
+		
+		$("#usersh").autocomplete({
+			//自定义匹配条件，从首字母匹配
+			source: function( request, response ) {
+	          var matcher = new RegExp( "^" + $.ui.autocomplete.escapeRegex( request.term ), "i" );//i为不区分大小写	
+	          response( $.grep( usernameTags, function( item ){
+	              return matcher.test( item );
+	          }) );
+	      }
+		});
+		//获取解析记录人json
+		$.ajax({
+	          type: "GET",
+	              url: "/Medicrm/noterlst",
+	              success: function(msg){
+	              	var nt = $("#noter"); 
+	                var a=eval('('+msg+')');
+	                var option="<option value='-1'>"+'请选择记录人'+"</option>";
+	                $.each(a,function(index,array){ 
+	                     option += "<option value='"+array['crm_Name']+"'>"+array['crm_Name']+"</option>"; 
+	                }); 
+	                nt.append(option); 
+	              }
+	        });
+	   $("#savemsg").click(function(){ 
+		   var name=$('#usersh').val();//客户姓名   
+		   var vtype=$("#vtype").find("option:selected").val();//拜访方式    
+		   var vtime=$('#vtime').val();//拜访时间
+		   var status=$("input[type='radio']:checked").val();//拜访状态
+		   var vmsg=$('#vmsg').val();//拜访主题
+		   var vbmsg=$('#vbmsg').val();//拜访用户反馈
+		   var cid=$('#cid').val();
+		   var noter=$('#noter').val();
+		   if(name=="")
+		   {
+			   alert("请选择客户姓名!");return;
+		   }
+		   //拜访状态为已拜访，拜访反馈不能为空
+		   if(status=="1"){
+				if(vbmsg==""){
+					alert("反馈内容不能为空");return;
+					}
+			   }
+		   if(noter=="-1"){
+				alert("请选择联系人");return;
+			   }
+   		   $.ajax({
+   	         type: "POST",
+   	         url: "/Medicrm/visitsave",
+   	         data:"name="+name+"&vtype="+vtype+"&vtime="+vtime+"&status="+status+"&vmsg="+vmsg+"&vbmsg="+vbmsg+"&cid="+cid+"&noter="+noter,
+   	         success: function(msg){
+       	         if(msg==0){
+           	         alert("拜访信息添加成功！");          	         
+       	         }
+       	         else if(msg==1){
+        	        alert("拜访信息编辑成功！");
+       	         }
+          	     else if(msg==2){
+            	    alert("该客户不存在！");
+           	     }
+            	 else if(msg==3){
+                  	alert("该客户已添加！");
+                 }
+          	     window.location.href='/Medicrm/visitrecord';
+   	         }
+   		  });
+      });
+   });  
+   </script>
+   <style type="text/css">
+		.tdinput{margin-top:10px;width:200px;}
+		.searchselect{margin-top:10px;width:215px;}
+		.fontck{font-size:16px;line-height:30px;}
+		.ui-autocomplete {
+				    max-height: 150px;
+				    overflow-y: auto;
+				    /* 防止水平滚动条 */
+				    overflow-x: hidden;
+				  }
+				  /* IE 6 不支持 max-height
+				   * 我们使用 height 代替，但是这会强制菜单总是显示为那个高度
+				   */
+				  * html .ui-autocomplete {
+				    height: 150px;
+				  }
+   </style>
+</head>
+<body class="fixed-top">
+   <?php require APPLICATION_PATH.'/views/scripts/index/header.phtml';?>
+   <div id="container" class="row-fluid">
+      <?php require APPLICATION_PATH.'/views/scripts/index/mainleft.phtml';?>
+      <input type="hidden" id="cid" name="cid" value="<?=$this->visitinfo['crm_ID']?>"></input>
+      <div id="main-content">
+         <!-- BEGIN PAGE CONTAINER-->
+         <div class="container-fluid">
+            <!-- BEGIN PAGE HEADER-->  
+            <?php if (empty($this->ck)){?> 
+            	<?php if (empty($this->upd)) {?> 
+            		 <div class="row-fluid">
+               <div class="span12">
+                   <h3 class="page-title">拜访信息添加</h3>
+                   <ul class="breadcrumb">
+                       <li>
+                           <a href="/Medicrm/default">首页</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li>
+                           <a href="/Medicrm/visitrecord">拜访信息管理</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li class="active">拜访信息添加</li>
+                   </ul>
+               </div>
+            </div>
+           
+            <div id="page-wraper">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="widget blue">
+                            <div class="widget-title">
+                                <h4><i class="icon-reorder"></i>拜访信息添加</h4>
+                            </div>
+                            <div class="widget-body">
+                                <table  style="margin-left:38%;">
+                                    <tr>
+                                        <td>客户姓名：</td>
+                                        <td>
+                                        	<input type="text" id="usersh" name="usersh" value="<?=$this->userinfo?>" class="tdinput"></input><font>*输入客户名后手动选择</font>
+                                        	<!--<select id="name" name="name" class="searchselect">
+                                        		<option value="0">--选择客户姓名--</option>
+                                        		<?php foreach ($this->userinfo as $user){?>
+                                        		<option value="<?=$user['crm_ClientID']?>" <?=$this->visitinfo['crm_ClientID']==$user['crm_ClientID']?"selected":""?>><?=$user['crm_ClientName']?></option>
+                                        		<?php }?>
+                                        	</select>
+                                        --></td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访方式：</td>
+                                        <td>
+                                        	<select id="vtype" name="vtype" class="searchselect">
+                                        		<option value="0" <?=$this->visitinfo['crm_VisitType']=="0"?"selected":""?>>短信</option>
+                            					<option value="1" <?=$this->visitinfo['crm_VisitType']=="1"?"selected":""?>>邮件</option>
+				                            	<option value="2" <?=$this->visitinfo['crm_VisitType']=="2"?"selected":""?>>电话</option>
+				                            	<option value="3" <?=$this->visitinfo['crm_VisitType']=="3"?"selected":""?>>实体</option>
+                                        	</select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访时间：</td>
+                                        <td><input type="text" size="10" onclick="WdatePicker({skin:'whyGreen',dateFmt:'yyyy-MM-dd HH:mm:ss'})" name="vtime" id="vtime" value="<?=$this->visitinfo['crm_VisitTime']?>" class="tdinput"></input></td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访状态：</td>
+                                        <td>
+                                        	<input type="radio" class="tdinput" id="status" name="status" value="0" <?=$this->visitinfo['crm_VisitStatus']=="0"||empty($this->upd)?"checked":""?>><font style="vertical-align:middle;">未拜访</font></input>&nbsp;&nbsp;&nbsp;&nbsp;
+                                        	<input type="radio" class="tdinput" id="status" name="status" value="1" <?=$this->visitinfo['crm_VisitStatus']=="1"?"checked":""?>><font style="vertical-align:middle;">已拜访</font></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访主题：</td>
+                                        <td><textarea id="vmsg" name="vmsg" class="tdinput"><?=$this->visitinfo['crm_VisitMsg']?></textarea>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访反馈：</td>
+                                        <td><textarea id="vbmsg" name="vbmsg" class="tdinput" style="width:500px;height:150px;"><?=$this->visitinfo['crm_VisitBackMsg']?></textarea>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                    	<td>记录人</td>
+                                    	<td>
+                                    		<select id="noter" name="noter" class="searchselect" ><!--
+                                    			<option><?=$this->employinfo['crm_Name']?></option>
+                                    		--></select>
+                                    	</td>
+                                    </tr>
+                                    <tr>
+                                    	<td align="right">
+                                    		<a href="javascript:void(0)" class="btn" style="text-align:center;color:black;width:50px;" id="savemsg">保存</a>
+                                    	</td>
+                                    	<td align="left">
+                                    		<a href="javascript:history.go(-1);" class="btn" style="text-align:center;color:black;width:50px;margin-left:100px;">返回</a>
+                                    	</td>
+                                    </tr>
+                                    
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            	<?php }else{?>
+            		 <div class="row-fluid">
+               <div class="span12">
+                   <h3 class="page-title">拜访信息修改</h3>
+                   <ul class="breadcrumb">
+                       <li>
+                           <a href="/Medicrm/default">首页</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li>
+                           <a href="/Medicrm/visitrecord">拜访信息管理</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li class="active">拜访信息修改</li>
+                   </ul>
+               </div>
+            </div>
+           
+            <div id="page-wraper">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="widget blue">
+                            <div class="widget-title">
+                                <h4><i class="icon-reorder"></i>拜访信息修改</h4>
+                            </div>
+                            <div class="widget-body">
+                                <table  style="margin-left:38%;">
+                                    <tr>
+                                        <td>客户姓名：</td>
+                                        <td>
+                                        	<input type="text" id="usersh" name="usersh" value="<?=$this->userinfo?>" class="tdinput" readonly="readonly"></input></td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访方式：</td>
+                                        <td>
+                                        	<select id="vtype" name="vtype" class="searchselect">
+                                        		<option value="0" <?=$this->visitinfo['crm_VisitType']=="0"?"selected":""?>>短信</option>
+                            					<option value="1" <?=$this->visitinfo['crm_VisitType']=="1"?"selected":""?>>邮件</option>
+				                            	<option value="2" <?=$this->visitinfo['crm_VisitType']=="2"?"selected":""?>>电话</option>
+				                            	<option value="3" <?=$this->visitinfo['crm_VisitType']=="3"?"selected":""?>>实体</option>
+                                        	</select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访时间：</td>
+                                        <td><input type="text" size="10"  name="vtime" id="vtime" value="<?=$this->visitinfo['crm_VisitTime']?>" class="tdinput" readonly="readonly"></input></td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访状态：</td>
+                                        <td>
+                                        	<input type="radio" class="tdinput" id="status" name="status" value="0" <?=$this->visitinfo['crm_VisitStatus']=="0"||empty($this->upd)?"checked":""?>><font style="vertical-align:middle;">未拜访</font></input>&nbsp;&nbsp;&nbsp;&nbsp;
+                                        	<input type="radio" class="tdinput" id="status" name="status" value="1" <?=$this->visitinfo['crm_VisitStatus']=="1"?"checked":""?>><font style="vertical-align:middle;">已拜访</font></input>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访主题：</td>
+                                        <td><textarea id="vmsg" name="vmsg" class="tdinput"><?=$this->visitinfo['crm_VisitMsg']?></textarea>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>拜访反馈：</td>
+                                        <td><textarea id="vbmsg" name="vbmsg" class="tdinput" style="width:500px;height:150px;"><?=$this->visitinfo['crm_VisitBackMsg']?></textarea>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                    	<td>记录人</td>
+                                    	<td>
+                                    		<input type="text" id="noter" value="<?=$this->employinfo['crm_Name']?>" readonly="readonly"/>	
+                                    	</td>
+                                    </tr>
+                                    <tr>
+                                    	<td align="right">
+                                    		<a href="javascript:void(0)" class="btn" style="text-align:center;color:black;width:50px;" id="savemsg">保存</a>
+                                    	</td>
+                                    	<td align="left">
+                                    		<a href="javascript:history.go(-1);" class="btn" style="text-align:center;color:black;width:50px;margin-left:100px;">返回</a>
+                                    	</td>
+                                    </tr>
+                                    
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            	<?php }?>
+           
+            <?php }else{?>
+             <div class="row-fluid">
+               <div class="span12">
+                   <h3 class="page-title">拜访信息查看</h3>
+                   <ul class="breadcrumb">
+                       <li>
+                           <a href="/Medicrm/default">首页</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li>
+                           <a href="/Medicrm/visitrecord">拜访信息管理</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li class="active">拜访信息查看</li>
+                   </ul>
+               </div>
+            </div>
+           
+            <div id="page-wraper">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="widget blue">
+                            <div class="widget-title">
+                                <h4><i class="icon-reorder"></i>拜访信息查看</h4>
+                            </div>
+                            <div class="widget-body">
+                                <table  style="margin-left:38%;">
+                                    <tr class="fontck">
+                                        <td>客户姓名：</td>
+                                        <td>
+                                        	<font><?=$this->visitinfo['crm_ClientName']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td>拜访方式：</td>
+                                        <td>
+                                        	<font><?=$a[$this->visitinfo["crm_VisitType"]]?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td>拜访时间：</td>
+                                        <td><font><?=$this->visitinfo['crm_VisitTime']?></font></td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td>拜访状态：</td>
+                                        <td>
+                                        	<font><?php if($this->visitinfo['crm_VisitStatus']==0){echo "未拜访";}elseif($this->visitinfo['crm_VisitStatus']==1){echo "已拜访";}?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td>拜访主题：</td>
+                                        <td><font><?=$this->visitinfo['crm_VisitMsg']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td>拜访反馈：</td>
+                                        <td><font><?=$this->visitinfo['crm_VisitBackMsg']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                    	<td>记录人：</td>
+                                    	<td><font><?=$this->employinfo['crm_Name']?></td>
+                                    </tr>
+                                    <tr style="line-height:50px;">
+                                    	<td style="text-align:left;" colspan="2">
+                                    		<a href="javascript:history.go(-1);" class="btn" style="text-align:center;color:black;width:50px;margin-left:40px;">返回</a>
+                                    	</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            <?php }?>  
+         </div>
+      </div>
+   </div>
+   <?php require APPLICATION_PATH.'/views/scripts/index/bottom.phtml';?>
+<!--   <script type="text/javascript" src="/js/jquery-ui-1.9.2.custom.min.js"></script>-->
+   <script>
+        function loadfun()
+        {
+        	 $("#bfxx").attr("class", "active");
+        	 $("#khgl").attr("class", "active");
+        }
+        loadfun();
+   </script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" style="overflow: hidden;">
+<!--<![endif]--><!-- BEGIN HEAD -->
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+   <meta charset="utf-8">
+   <title>医库软件CRM管理</title>
+   <meta content="width=device-width, initial-scale=1.0" name="viewport">
+   <link href="/css/jquery.easy-pie-chart.css" rel="stylesheet" type="text/css" media="screen">
+   <script src="/js/jquery-1.4.1.js" type="text/javascript"></script>
+   <script src="/js/jquery-1.9.1.min.js" type="text/javascript"></script>
+   
+   <script src="/js/highcharts.js" type="text/javascript"></script>
+   <script src="/js/exporting.js" type="text/javascript"></script>
+   <style type="text/css">
+    .jqstooltip 
+	{
+    	position: absolute;
+    	left: 0px;
+    	top: 0px;
+    	visibility: hidden;
+        background: rgb(0, 0, 0) transparent;
+        background-color: rgba(0,0,0,0.6);
+        filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);
+        -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";
+        color: white;
+        font: 10px arial, san serif;
+        text-align: left;
+        white-space: nowrap;
+        padding: 5px;
+        border: 1px solid white;
+    }
+    .jqsfield 
+	{ 
+        color: white;
+        font: 10px arial, san serif;
+        text-align: left;
+    }
+   </style>
+   <script type="text/javascript">
+   		$(function () {
+   	   		//用户地区分布
+   			var chart;
+       		$("#container1").highcharts({
+       			chart: {
+             	  	plotBackgroundColor: null,
+               		plotBorderWidth: null,
+               		plotShadow: false,
+              		backgroundColor:''
+           		},
+           	exporting: { enabled:false },
+           	title: {
+               text: ''
+           	},
+           	tooltip: {
+       	   	pointFormat: '{series.name}: <b>{point.percentage:.3f}%</b>'
+           	},
+           	plotOptions: {
+               pie: {
+               	size:'80%',
+                   allowPointSelect: true,
+                   cursor: 'pointer',
+                   dataLabels: {
+                       enabled: true,
+                       color: '#000000',
+                       connectorColor: '#000000',
+                       format: '<b>{point.name}</b>: {point.percentage:.3f} %'
+                   }
+               }
+           	},
+           	series: [{
+               type: 'pie',
+               name: '比例',
+               data:[
+                    <?php $v=1; foreach($this->userdata as $folder){if($v!=count($this->userdata)){?>
+                   	["<?=$folder['UserCity2']==""?"其他(".$folder['usernum'].")":$folder['UserCity2']."(".$folder['usernum'].")"?>",<?php echo $folder['usernum']?>],
+   					<?php }else{?>
+                   	["<?php echo $folder['UserCity2']."(".$folder['usernum'].")"?>",<?php echo $folder['usernum']?>]
+   					<?php }$v++;}?>
+               		]
+           	}]
+   	    	});
+       		//用户日增长
+   			$('#container2').highcharts({
+   		        chart: {
+   		            type: 'spline'
+   		        },
+      		    exporting: { enabled:false },
+   		        title: {
+   		            text: '用户日增长统计分析'
+   		        },
+   		        subtitle: {
+   		            text: ''
+   		        },
+   		        xAxis: {
+   		            categories: ['01', '02', '03', '04', '05','06', '07', '08', '09', '10', '11', '12','13', '14', '15', '16', '17', '18',
+   		                '19', '20', '21', '22', '23', '24']
+   		        },
+   		        yAxis: {
+   		            title: {
+   		                text: '用户数'
+   		            },
+   		            labels: {
+   		                formatter: function() {
+   		                    return this.value
+   		                }
+   		            }
+   		        },
+   		        tooltip: {
+   		            crosshairs: true,
+   		            shared: true
+   		        },
+   		        plotOptions: {
+   		            spline: {
+   		                marker: {
+   		                    radius: 4,
+   		                    lineColor: '#666666',
+   		                    lineWidth: 1
+   		                }
+   		            }
+   		        },
+   		        series: [{
+   		            name: '增长人数/小时',
+   		            marker: {
+   		                symbol: 'square'
+   		            },
+   		            data: [
+      	   		            <?php for($i=1;$i<=24;$i++){?>
+      	   		            <?php if($i<10){?>
+           	   		       <?=$this->usergrowth[" 0$i"]?>,
+      	   		            <?php }else{?>
+           	   		       <?=$this->usergrowth[" $i"]?>,
+      	   		            <?php }}?>
+   		               ]  		        
+   		        }]
+   		    });
+   		});
+
+   		//更新数据
+   		function updatemsg()
+   		{ 
+   	   		var vitality=$("#vitality");		
+   			$.ajax({
+     	         type: "POST",
+     	         url: "/Medicrm/updatemsg",
+     	         data:"",
+     	         success: function(msg){ 
+       	        	 if(msg==0){//说明token过期或者token错误，用户需要重新登录
+      			         window.location.href='/Index/index';
+      			         return;   
+      				 }else{
+       					 var a=eval('('+msg+')');
+	        	         $i=0;
+	       	        	 $('.easy-pie-chart .percentage').each(function() {
+	        	              $(this).data('easyPieChart').update(a[$i]);
+	        	              $('span', this).text(a[$i]);
+	        	              $i++;
+	        	          });
+      				 }
+     	         }
+     		});
+   	   	}
+   </script>
+</head>
+<body class="fixed-top">
+   <!-- BEGIN HEADER -->
+   <?php require APPLICATION_PATH.'/views/scripts/index/header.phtml';?>
+   <div id="container" class="row-fluid">
+     <?php require APPLICATION_PATH.'/views/scripts/index/mainleft.phtml';?>
+      <div id="main-content">
+         <div class="container-fluid">
+            <div class="row-fluid">
+               <div class="span12">
+                   <h3 class="page-title">医库软件CRM管理</h3>
+                   <ul class="breadcrumb">
+                       <li>
+                           <a href="/Medicrm/default">首页</a>
+                           <span class="divider">/</span>
+                       </li>                      
+                       <li class="active">首页</li>
+                   </ul>
+               </div>
+            </div>
+            <div class="row-fluid">
+                <div class="metro-nav">
+                    <div class="metro-nav-block nav-block-green">
+                        <a data-original-title="" href="#">
+                            <i class="icon-user"></i>
+                            <div class="info"><?=$this->usergrowth['growthnum']?></div>
+                            <div class="status">今日新增用户</div>
+                        </a>
+                    </div>
+                    <div class="metro-nav-block nav-block-yellow">
+                        <a data-original-title="" href="#">
+                            <i class="icon-time"></i>
+                            <div class="info"><?=count($this->todyplan)?></div>
+                            <div class="status">今日拜访计划</div>
+                        </a>
+                    </div>
+                    <div class="metro-nav-block nav-light-blue">
+                        <a data-original-title="" href="#">
+                            <i class="icon-envelope"></i>
+                            <div class="info">123</div>
+                            <div class="status">消息</div>
+                        </a>
+                    </div>
+                </div>
+                <div class="space10"></div>
+            </div>
+            <div class="row-fluid">
+                <div class="span6">
+                    <div class="widget ">
+                        <div class="widget-title">
+                            <h4><i class="icon-reorder"></i>用户地区分布</h4>
+                            <span class="tools">
+                                <a href="javascript:;" class="icon-chevron-down"></a>
+                            </span>
+                        </div>
+                        <div class="widget-body">
+                            <div class="text-center">
+                            <div id="container1" style="height:300px;width:800px;margin-top:5px;border:0px solid #cdcdcd;margin:0 auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="span6">
+                    <div class="widget green">
+                        <div class="widget-title">
+                            <h4><i class="icon-reorder"> </i>用户日增长</h4>
+                            <span class="tools">
+                                <a href="javascript:;" class="icon-chevron-down"></a>
+                            </span>
+                        </div>
+                        <div class="widget-body">
+                            <div class="text-center">
+                            	<div id="container2" style="height:300px;width:800px;margin-top:5px;border:0px solid #cdcdcd;margin:0 auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row-fluid">
+                <div class="span7">
+                    <div class="widget orange">
+                        <div class="widget-title">
+                            <h4><i class="icon-tasks"></i>用户活跃度</h4>
+                         <span class="tools">
+                            <a href="javascript:;" class="icon-chevron-down"></a>
+<!--                            <a href="javascript:;" class="icon-remove"></a>-->
+                         </span>
+                            <div class="update-btn">
+                                <a href="javascript:void(0);" class="btn" onclick="updatemsg();"><i class="icon-repeat"></i> 数据更新</a>
+                            </div>
+                        </div>
+                        <div class="widget-body">
+                            <div class="text-center" id="vitality">
+                            <div id="upd">
+                             	<div class="easy-pie-chart">
+                                    <div class="percentage easyPieChart" data-percent="<?=$this->one?>" style="width: 95px; height: 95px; line-height: 95px;"><span><?=$this->one?></span>%</div>
+                                    <div class="title">今天</div>
+                                </div>
+                                <div class="easy-pie-chart">
+                                    <div class="percentage easyPieChart" data-percent="<?=$this->two?>" style="width: 95px; height: 95px; line-height: 95px;"><span><?=$this->two?></span>%</div>
+                                    <div class="title">1-3个月</div>
+                                </div>
+                                <div class="easy-pie-chart">
+                                    <div class="percentage easyPieChart" data-percent="<?=$this->three?>" style="width: 95px; height: 95px; line-height: 95px;"><span><?=$this->three?></span>%</div>
+                                    <div class="title">3-6个月</div>
+                                </div>
+                                <div class="easy-pie-chart">
+                                    <div class="percentage easyPieChart" data-percent="<?=$this->four?>" style="width: 95px; height: 95px; line-height: 95px;"><span><?=$this->four?></span>%</div>
+                                    <div class="title">6-12个月</div>
+                                </div>
+                                <div class="easy-pie-chart">
+                                    <div class="percentage easyPieChart" data-percent="<?=$this->five?>" style="width: 95px; height: 95px; line-height: 95px;"><span><?=$this->five?></span>%</div>
+                                    <div class="title">1年及以上</div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>      
+         </div>
+      </div>
+   </div>
+    <?php require APPLICATION_PATH.'/views/scripts/index/bottom.phtml';?>
+   <script type="text/javascript" src="/js/jquery-ui-1.9.2.custom.min.js"></script>
+<!--   <script type="text/javascript" src="/js/jquery.slimscroll.min.js"></script>-->
+   <script src="/js/jquery.easy-pie-chart.js" type="text/javascript"></script>
+<!--   <script src="/js/jquery.sparkline.js" type="text/javascript"></script>-->
+   <script src="/js/Chart.js"></script>
+   <script src="/js/easy-pie-chart.js"></script>
+<!--   <script src="/js/sparkline-chart.js"></script>-->
+   <script src="/js/home-chartjs.js"></script>
+</body>
+</html>

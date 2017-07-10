@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+   <meta charset="utf-8">
+   <title>医库软件CRM管理</title>
+   <meta content="width=device-width, initial-scale=1.0" name="viewport">
+   <meta content="" name="description">
+   <meta content="" name="author">
+   <link href="/css/bootstrap.min.css" rel="stylesheet">
+   <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
+   <link href="/css/font-awesome.css" rel="stylesheet">
+   <link href="/css/style.css" rel="stylesheet">
+   <link href="/css/style-responsive.css" rel="stylesheet">
+   <link href="/css/style-default.css" rel="stylesheet" id="style_color">
+</head>
+<body class="fixed-top">
+<?php $a=array(0=>"短信",1=>"邮件",2=>"电话",3=>"实体");?>
+   <div id="header" class="navbar navbar-inverse navbar-fixed-top">
+       <div class="navbar-inner">
+           <div class="container-fluid">
+               <div class="sidebar-toggle-box hidden-phone">
+                   <div class="icon-reorder tooltips" data-placement="right" data-original-title="导航切换"></div>
+               </div>
+               <a class="brand" href="/Medicrm/default">
+                   <img src="/images/logo.png" alt="Metro Lab">
+               </a>
+               <div id="top_menu" class="nav notify-row">
+                   <ul class="nav top-menu">
+                       <!-- BEGIN INBOX DROPDOWN -->
+                       
+                       <li class="dropdown" id="header_notification_bar">
+                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                               <i class="icon-bell-alt"></i>
+                               <span class="badge badge-warning"><?=count($this->todyplan)?></span>
+                           </a>
+                           <ul class="dropdown-menu extended notification">
+                               <li>
+                                   <p>你有<?=count($this->todyplan)?>条提醒</p>
+                               </li>
+                               <?php for($i=0;$i<(count($this->todyplan)>=3?3:count($this->todyplan));$i++){?>
+                               <li>
+                                   <a href="/Medicrm/visitdetail?upd=<?=$this->todyplan[$i]['crm_ID']?>&ck=1">
+                                       <span class="label label-important"><i class="icon-bell"></i></span>
+                                                                                                        你有一个<?=$a[$this->todyplan[$i]['crm_VisitType']]?>回访
+                                       <span class="small italic">
+                                       <?php 
+                                        $second=strtotime($this->todyplan[$i]['crm_VisitTime'])-strtotime(date("Y-m-d H:i:s"));
+                                		$day = floor($second/(3600*24));
+                                		$second = $second%(3600*24);//除去整天之后剩余的时间
+                                		$hour = floor($second/3600);
+                                		$second = $second%3600;//除去整小时之后剩余的时间 
+                                		$minute = floor($second/60);
+                                		$second = $second%60;//除去整分钟之后剩余的时间 
+                                		?>
+                                       	 &nbsp;<?=empty($hour)?"":$hour."小时"?> <?=empty($minute)?"":$minute."分钟"?>后
+                                       </span>
+                                   </a>
+                               </li>
+                                <?php }?>
+                               <li>
+                                   <a href="/Medicrm/visitrecord">查看所有提醒</a>
+                               </li>
+                           </ul>
+                       </li>
+
+                   </ul>
+               </div>
+               <div class="top-nav ">
+                   <ul class="nav pull-right top-menu">
+                       <!-- BEGIN SUPPORT -->
+                       <li class="dropdown mtop5">
+                           <a class="dropdown-toggle element" data-placement="bottom" data-toggle="tooltip" href="https://kefu.easemob.com/mo/agent" target="_blank" data-original-title="Chat">
+                               <i class="icon-comments-alt"></i>
+                           </a>
+                       </li>
+                       <li class="dropdown">
+                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                               <img src="<?=empty($_SESSION['loginuser']['crm_UserImg'])?"/images/avatar-mini.png":$_SESSION['loginuser']['crm_UserImg']?>" style="width:35px;height:35px;" alt="">
+                               <span class="username"><?=$_SESSION['loginuser']['crm_Name']?></span>
+                               <b class="聊天"></b>
+                           </a>
+                           <ul class="dropdown-menu extended logout">
+                               <li><a href="/Employee/persinfo?upd=<?=$_SESSION['loginuser']['crm_EmployID']?>"><i class="icon-user"></i>我的资料</a></li>
+                               <li><a href="/Index/lout"><i class="icon-key"></i>退出</a></li>
+                           </ul>
+                       </li>
+                   </ul>
+               </div>
+           </div>
+       </div>
+   </div>
+</body>
+</html>

@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9"> <![endif]-->
+<!--[if !IE]><!--> <html lang="en"> <!--<![endif]-->
+<!-- BEGIN HEAD -->
+<head>
+   <meta charset="utf-8" />
+   <title>客户信息列表</title>
+   <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+   <script src="/js/jquery-1.4.1.js" type="text/javascript"></script>
+   <script src="/js/jquery-1.9.1.min.js" type="text/javascript"></script>
+   <script type="text/javascript">
+   $(function(){
+		//手机号码，邮箱验证
+	   $('#save').click(function(){
+		   var phone=$('#phone').val();
+		   var phonereg=/^1\d{10}$/;
+		   var email=$('#email').val();
+		   var emailreg=/^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/;
+		   var qq=$('#qq').val();
+		   var qqreg=/^\d{5,10}$/;
+		   
+		   if(phone!="")
+			{
+				if(!phonereg.test(phone))
+				{
+					alert('手机号码不合法');
+					$('#phone').focus();
+					return false;
+				}
+			}
+		   if(qq!="")
+			{
+				if(!qqreg.test(qq))
+				{
+					alert('QQ不合法');
+					$('#qq').focus();
+					return false;
+				}
+			}
+			if(email!="")
+			{
+				if(!emailreg.test(email))
+				{
+					alert('邮箱不合法');
+					$('#email').focus();
+					return false;
+				}
+			}
+		   })
+	   })
+   
+   function ctrl(){
+		   var name=$('#name').val();//员工姓名
+		   var loginname=$('#loginname').val();//登录名      
+		   var loginpwd=$('#loginpwd').val();//登录密码
+		   var sex=$("input[type='radio']:checked").val();
+		   var phone=$('#phone').val(); 
+		   var address=$('#address').val(); 
+		   var qq=$('#qq').val();
+		   var email=$('#email').val();   
+		   var textfield=$('#usimg').val();//头像地址
+		   if(loginname=="")
+		   {
+			  alert("登陆账号不能为空！");return false; 
+		   }
+		   if(loginpwd=="")
+		   {
+			  alert("登陆密码不能为空！");return false; 
+		   }
+      }
+   function stopupload(rel){ 
+		var msg; 
+		switch (rel) {
+			case 0:
+				alert("修改成功！");
+				window.location.href='/Employee/employee'; 
+				break;  
+			case 1:
+				alert("文件格式错误！"); 
+				break; 
+			case 2: 
+				alert("文件过大！");
+				break;
+			case 4://说明token过期或者token错误，用户需要重新登录
+				window.location.href='/Index/index';
+		        break; 
+			case 5:
+				alert("添加成功！");
+				window.location.href='/Employee/employee'; 
+				break;   
+			default: 
+				alert("上传文件失败！");
+				break; 
+		} 
+	} 
+   function preview1(file) {
+       var img = new Image(), url = img.src = URL.createObjectURL(file);
+       var $img = $(img);
+       img.onload = function() {
+           URL.revokeObjectURL(url);
+           $('#preview').empty().append($img);
+           
+       }
+   }
+   function preview2(file) {
+       var reader = new FileReader();
+       reader.onload = function(e) {
+           var $img = $('<img>').attr("src", e.target.result);
+           $('#preview').empty().append($img);
+           
+       }
+       reader.readAsDataURL(file);
+       
+   }
+    
+   $(function() {
+       $('[type=file]').change(function(e) {
+           var file = e.target.files[0];
+           preview1(file);
+           document.getElementsByTagName("img").width=150;
+       })
+   })
+   </script>
+   <style type="text/css">
+	 	.tdinput{margin-top:10px;width:200px;}
+		.searchselect{margin-top:10px;width:120px;}
+		.txt{ border:1px solid #cdcdcd; width:400px;} 
+		.fontck{font-size:16px;line-height:30px;}
+		.file-box{ position:relative;width:100px;padding-top: 5px;} 
+		.btn{ background:url(/images/dibu.png);height:26px; width:70px;color:white;cursor:pointer;} 
+		.file{ 
+		 position:absolute;
+		 top:0; 
+		 right: 13px;
+		 height: 24px;
+		 filter: alpha(opacity:0);
+		 opacity: 0;
+		 width: 70px;
+		 cursor: pointer;
+		 margin-top: 5px;
+		}
+		#preview {
+		 width: 150px;
+		 height: 150px;
+		 overflow: hidden;
+		}
+		#preview img {
+		 width: 100%;
+		 height: 100%;
+		}
+   </style>
+</head>
+<body class="fixed-top">
+   <?php require APPLICATION_PATH.'/views/scripts/index/header.phtml';?>
+   <div id="container" class="row-fluid">
+      <?php require APPLICATION_PATH.'/views/scripts/index/mainleft.phtml';?>
+      <div id="main-content">
+         <!-- BEGIN PAGE CONTAINER-->
+         <div class="container-fluid">
+            <!-- BEGIN PAGE HEADER-->   
+            <div class="row-fluid">
+               <div class="span12">
+                   <h3 class="page-title">个人资料</h3>
+                   <ul class="breadcrumb">
+                       <li>
+                           <a href="/Medicrm/default">首页</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li class="active">个人资料</li>
+                   </ul>
+               </div>
+            </div>
+           <?php if (empty($this->ck)) {?>
+            <div id="page-wraper">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="widget blue">
+                            <div class="widget-title">
+                                <h4><i class="icon-reorder"></i>个人资料</h4>
+                            </div>
+                            <form name="mform" action="/Employee/employeesave" method="post" enctype="multipart/form-data" target="framepic">
+                            <input type="hidden" id="uid" name="uid" value="<?=$this->upd?>"></input>
+                            <div class="widget-body">
+                                <table  style="margin-left:30%;">
+                                <tr>
+                                	<td>
+                                		<table>
+		                                	<tr>
+		                                        <td style="width:80px;">登录账号：</td>
+		                                        <td><input type="text" id="loginname" name="loginname" class="tdinput" value="<?=$this->userinfo['crm_LoginName']?>" <?=empty($this->upd)?"":"readonly"?>></input></td>
+		                                    </tr>
+		                                    <tr>
+		                                        <td style="width:80px;">登录密码：</td>
+		                                        <td><input type="password" id="loginpwd" name="loginpwd" class="tdinput" value="<?=$this->userinfo['crm_LoginPwd']?>"></input></td>
+		                                    </tr>
+		                                    <tr>
+		                                    	<td style="width:80px;">员工姓名</td>
+		                                    	<td><input type="text" id="name" name="name" class="tdinput" value="<?=$this->userinfo['crm_Name']?>"></input></td>
+		                                    </tr>
+		                                    <tr>
+		                                        <td style="width:80px;">员工性别：</td>
+		                                        <td>
+		                                        	<input type="radio" id="sex" name="sex" value="1" <?=$this->userinfo['crm_Gender']==1?"checked":""?>><font style="vertical-align:middle;">&nbsp;男</font></input>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		                                        	<input type="radio" id="sex" name="sex" value="0" <?=$this->userinfo['crm_Gender']==0?"checked":""?>><font style="vertical-align:middle;">&nbsp;女</font></input>
+		                                        </td>
+		                                    </tr>
+		                                     <tr>
+		                                        <td style="width:80px;">员工电话：</td>
+		                                        <td><input type="text" id="phone" name="phone" class="tdinput" value="<?=$this->userinfo['crm_UserPhone']?>"></input></td>
+		                                    </tr>
+		                                     <tr>
+		                                        <td style="width:80px;">员工地址：</td>
+		                                        <td><input type="text" id="address" name="address" class="tdinput" value="<?=$this->userinfo['crm_UserAddress']?>"></input></td>
+		                                    </tr>
+		                                     <tr>
+		                                        <td style="width:80px;">员工QQ：</td>
+		                                        <td><input type="text" id="qq" name="qq" class="tdinput" value="<?=$this->userinfo['crm_UserQQ']?>"></input></td>
+		                                    </tr>
+		                                     <tr>
+		                                        <td style="width:80px;">员工邮箱：</td>
+		                                        <td><input type="text" id="email" name="email" class="tdinput" value="<?=$this->userinfo['crm_UserEmail']?>"></input></td>
+		                                    </tr> 
+                                		</table>
+                                	</td>
+                                	<td>
+                                		<table style="margin-left:50px;">
+                                			 <tr>
+												<td>
+												<div id="preview" style="padding-top: 5px;margin:0 auto;">
+												<img src="<?php echo empty($this->userinfo['crm_UserImg'])?'/images/avatar-mini.png':$this->userinfo['crm_UserImg']?>" style="width:150px;height:150px;"></img>
+												</div>
+												<div class="file-box" style="margin:0 auto;">
+												<input type="file"  name="file" accept="iamge/gif,image/jpeg,image/jpg,image/png"  onchange="document.getElementById('preview').value=this.value" style="width:70px;display:none;"/>
+												<input type="button" value="修改头像" class="btn" style="cursor:pointer;cursor:hand;width:80px;height:35px;" onclick="this.form.file.click();"/> 
+												<input type="hidden" name="usimg" id="usimg" value="<?=$this->userinfo['crm_UserImg']?>"></input>
+												</div><span style="font-size:12px;color:grey;line-height:20px;">仅支持JPG、PNG、GIF格式文件小于2M。</span>
+												<iframe id="framepic" name="framepic" style="display:none"></iframe>
+												</td>
+						                    </tr>
+                                		</table>
+                                	</td>
+                                </tr>
+                                </table>
+                                <div style="margin-left:40%;">                                	
+                                 <input onclick="return ctrl();" type="submit" class="btn" style="cursor:pointer;cursor:hand;width:80px;height:35px;" value="保存" id="save"/>   
+                                 <input onclick="javascript:history.go(-1);" type="button" class="btn" style="cursor:pointer;cursor:hand;width:80px;height:35px;margin-left:50px;" value="返回"/>                                    
+                                </div>
+                            </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php }else{?>           
+            <div id="page-wraper">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="widget blue">
+                            <div class="widget-title">
+                                <h4><i class="icon-reorder"></i>个人资料查看</h4>
+                            </div>
+                            <div class="widget-body">
+                                <table  style="margin-left:38%;">
+                                    <tr class="fontck">
+                                        <td style="width:10%;">登录账号：</td>
+                                        <td>
+                                        	<font><?=$this->userinfo['crm_LoginName']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td style="width:10%;">员工姓名：</td>
+                                        <td>
+                                        	<font><?=$this->userinfo['crm_Name']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td style="width:10%;">员工性别：</td>
+                                        <td>
+                                        	<font><?=$this->userinfo['crm_Gender']==0?"女":"男"?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td style="width:10%;" id="phone">员工电话：</td>
+                                        <td>
+                                        	<font><?=$this->userinfo['crm_UserPhone']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td style="width:10%;">员工地址：</td>
+                                        <td><font><?=$this->userinfo['crm_UserAddress']?></font></td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td style="width:10%;">员工QQ：</td>
+                                        <td>
+                                        	<font><?=$this->userinfo['crm_UserQQ']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td style="width:10%;" id="email">员工邮箱：</td>
+                                        <td><font><?=$this->userinfo['crm_UserEmail']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td style="width:10%;">员工头像：</td>
+                                        <td><img src="<?=empty($this->userinfo['crm_UserImg'])?"/images/avatar-mini.png":$this->userinfo['crm_UserImg']?>" style="width:50px;height:50px;"/>
+                                        </td>
+                                    </tr>
+                                    <tr style="line-height:50px;">
+                                    	<td style="text-align:left;" colspan="2">
+                                    		<a href="javascript:history.go(-1);" class="btn" style="text-align:center;color:black;width:50px;margin-left:40px;">返回</a>
+                                    	</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            <?php }?>       
+         </div>
+      </div>
+   </div>
+   <?php require APPLICATION_PATH.'/views/scripts/index/bottom.phtml';?>
+   <script type="text/javascript" src="/js/jquery-ui-1.9.2.custom.min.js"></script>
+   <script>
+        function loadfun()
+        {
+        	 $("#ygxx").attr("class", "active");
+        	 $("#yggl").attr("class", "active");
+        }
+        loadfun();
+   </script>
+</body>
+</html>

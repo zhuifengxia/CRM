@@ -1,0 +1,230 @@
+
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9"> <![endif]-->
+<!--[if !IE]><!--> <html lang="en"> <!--<![endif]-->
+<!-- BEGIN HEAD -->
+<head>
+   <meta charset="utf-8" />
+   <title>系统邮箱</title>
+   <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+   <script src="/js/jquery-1.4.1.js" type="text/javascript"></script>
+   <script src="/js/jquery-1.9.1.min.js" type="text/javascript"></script>
+    <script src="/js/DatePicker/WdatePicker.js" type="text/javascript"></script>
+   <script type="text/javascript">
+   $(function(){
+	   $("#savemsg").click(function(){ 
+		   var ownname=$('#ownname').val();//邮箱所属人 
+		   var emailaccount=$('#emailaccount').val();//邮箱账号
+		   var emailpwd=$('#emailpwd').val();//邮箱密码
+		   var emailstate=$("input[type='radio']:checked").val();//邮箱状态
+		   var emailid=$("#emailid").val();//邮箱ID，编辑时使用
+		   if(ownname=="")
+		   {
+			   alert("请填写邮箱所属人!");
+			   return;
+		   }
+		   if(emailaccount=="")
+		   {
+			   alert("请填写邮箱账号!");
+			   return;
+		   }
+		   if(emailaccount!="")
+		   {
+			   if (!emailaccount.match(/^\w+((-\w+)|(\.\w+))*\@[A-Za-z0-9]+((\.|-)[A-Za-z0-9]+)*\.[A-Za-z0-9]+$/)) 
+				{
+					alert("请填写合法的邮箱地址！");
+					$("#emailaccount").focus();
+					return;
+				} 
+		   }
+		   if(emailpwd=="")
+		   {
+			   alert("请填写邮箱密码!");
+			   return;
+		   }
+   		   $.ajax({
+   	         type: "POST",
+   	         url: "/Systemset/sysemailsave",
+   	         data:"ownname="+ownname+"&emailaccount="+emailaccount+"&emailpwd="+emailpwd+"&emailstate="+emailstate+"&emailid="+emailid,
+   	         success: function(msg){
+       	         if(msg==0){
+           	         alert("系统邮箱添加成功！");          	         
+       	         }
+       	         else if(msg==1){
+        	        alert("系统邮箱编辑成功！");
+       	         }
+       	         else if(msg==3){//说明token过期或者token错误，用户需要重新登录
+	  			    window.location.href='/Index/index';
+	  			    return;   
+           	     }else{
+               	    alert("操作失败！");
+               	 }
+          	     window.location.href='/Systemset/sysemail';
+   	         }
+   		  });
+      });
+   });  
+   </script>
+   <style type="text/css">
+		.tdinput{margin-top:10px;width:200px;}
+		.searchselect{margin-top:10px;width:215px;}
+		.fontck{font-size:16px;line-height:30px;}
+   </style>
+</head>
+<body class="fixed-top">
+   <?php require APPLICATION_PATH.'/views/scripts/index/header.phtml';?>
+   <div id="container" class="row-fluid">
+      <?php require APPLICATION_PATH.'/views/scripts/index/mainleft.phtml';?>
+      <input type="hidden" id="cid" name="cid" value="<?=$this->visitinfo['crm_ID']?>"></input>
+      <div id="main-content">
+         <!-- BEGIN PAGE CONTAINER-->
+         <div class="container-fluid">
+            <!-- BEGIN PAGE HEADER-->  
+            <?php if (empty($this->ck)){?> 
+            <div class="row-fluid">
+               <div class="span12">
+                   <h3 class="page-title">系统邮箱<?=!empty($this->emaildetail)?"修改":"添加"?></h3>
+                   <ul class="breadcrumb">
+                       <li>
+                           <a href="/Medicrm/default">首页</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li>
+                           <a href="/Systemset/sysemail">系统设置</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li class="active">邮箱信息<?=!empty($this->emaildetail)?"修改":"添加"?></li>
+                   </ul>
+               </div>
+            </div>
+           
+            <div id="page-wraper">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="widget blue">
+                            <div class="widget-title">
+                                <h4><i class="icon-reorder"></i>邮箱信息<?=!empty($this->emaildetail)?"修改":"添加"?></h4>
+                            </div>
+                            <div class="widget-body">
+                                <table  style="margin-left:38%;">
+                                    <tr>
+                                        <td>邮箱所属人：</td>
+                                        <td>
+                                            <input type="hidden" name="emailid" id="emailid" value="<?=$this->emaildetail['crm_SystemID']?>"/>
+                                        	<input type="text" class="tdinput" id="ownname" name="ownname" value="<?=$this->emaildetail['crm_OwnName']?>"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>邮箱账号：</td>
+                                        <td>
+                                        	<input type="text" class="tdinput" id="emailaccount" name="emailaccount" value="<?=$this->emaildetail['crm_EmailAccount']?>"/>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>邮箱密码：</td>
+                                        <td><input type="text" class="tdinput" name="emailpwd" id="emailpwd" value="<?=$this->emaildetail['crm_EmailPwd']?>" ></input></td>
+                                    </tr>
+                                    <tr>
+                                        <td>邮箱状态</td>
+                                        <td>
+                                        	<input type="radio" class="tdinput" id="emailstate" name="emailstate" value="0" <?=$this->emaildetail['crm_EmailState']=="0"||empty($this->emaildetail)?"checked":""?>><font style="vertical-align:middle;">可用</font>&nbsp;&nbsp;&nbsp;&nbsp;
+                                        	<input type="radio" class="tdinput" id="emailstate" name="emailstate" value="1" <?=$this->emaildetail['crm_EmailState']=="1"?"checked":""?>><font style="vertical-align:middle;">不可用</font>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                    	<td align="right" style="height:50px;">
+                                    		<a href="javascript:void(0)" class="btn" style="text-align:center;color:black;width:50px;" id="savemsg">保存</a>
+                                    	</td>
+                                    	<td align="left">
+                                    		<a href="javascript:history.go(-1);" class="btn" style="text-align:center;color:black;width:50px;margin-left:100px;">返回</a>
+                                    	</td>
+                                    </tr>
+                                    
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            <?php }else{?>
+             <div class="row-fluid">
+               <div class="span12">
+                   <h3 class="page-title">拜访信息查看</h3>
+                   <ul class="breadcrumb">
+                       <li>
+                           <a href="/Medicrm/default">首页</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li>
+                           <a href="/Medicrm/visitrecord">拜访信息管理</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li class="active">拜访信息查看</li>
+                   </ul>
+               </div>
+            </div>
+           
+            <div id="page-wraper">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="widget blue">
+                            <div class="widget-title">
+                                <h4><i class="icon-reorder"></i>拜访信息查看</h4>
+                            </div>
+                            <div class="widget-body">
+                                <table  style="margin-left:38%;">
+                                    <tr class="fontck">
+                                        <td>客户姓名：</td>
+                                        <td>
+                                        	<font><?=$this->visitinfo['crm_ClientName']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td>拜访方式：</td>
+                                        <td>
+                                        	<font><?php if($this->visitinfo['crm_VisitType']==0){echo "电话";}elseif($this->visitinfo['crm_VisitType']==1){echo "邮件";}elseif($this->visitinfo['crm_VisitType']==2){echo "实地";}elseif($this->visitinfo['crm_VisitType']==3){echo "其它";}?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td>拜访时间：</td>
+                                        <td><font><?=$this->visitinfo['crm_VisitTime']?></font></td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td>拜访状态：</td>
+                                        <td>
+                                        	<font><?php if($this->visitinfo['crm_VisitStatus']==0){echo "未拜访";}elseif($this->visitinfo['crm_VisitStatus']==1){echo "已拜访";}?></font>
+                                        </td>
+                                    </tr>
+                                    <tr class="fontck">
+                                        <td>拜访备注：</td>
+                                        <td><font><?=$this->visitinfo['crm_VisitMsg']?></font>
+                                        </td>
+                                    </tr>
+                                    <tr style="line-height:50px;">
+                                    	<td style="text-align:left;" colspan="2">
+                                    		<a href="javascript:history.go(-1);" class="btn" style="text-align:center;color:black;width:50px;margin-left:40px;">返回</a>
+                                    	</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            <?php }?>  
+         </div>
+      </div>
+   </div>
+   <?php require APPLICATION_PATH.'/views/scripts/index/bottom.phtml';?>
+   <script type="text/javascript" src="/js/jquery-ui-1.9.2.custom.min.js"></script>
+   <script>
+        function loadfun()
+        {
+        	 $("#xtyx").attr("class", "active");
+        	 $("#xtsz").attr("class", "active");
+        }
+        loadfun();
+   </script>
+</body>
+</html>

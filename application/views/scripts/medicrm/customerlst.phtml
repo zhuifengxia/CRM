@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<!--[if IE 8]> <html lang="en" class="ie8"> <![endif]-->
+<!--[if IE 9]> <html lang="en" class="ie9"> <![endif]-->
+<!--[if !IE]><!--> <html lang="en"> <!--<![endif]-->
+<!-- BEGIN HEAD -->
+<head>
+   <meta charset="utf-8" />
+   <title>客户信息列表</title>
+   <meta content="width=device-width, initial-scale=1.0" name="viewport" /> 
+   <script src="/js/jquery-1.4.1.js" type="text/javascript"></script>
+   <script src="/js/jquery-1.9.1.min.js" type="text/javascript"></script>
+   <script src="/js/DatePicker/WdatePicker.js" type="text/javascript"></script>
+   <script type="text/javascript">
+   var s=0;
+   $(function(){
+		//邮箱选择验证
+		$('#emailsubmit').click(function(){
+			var rad=$('input:radio[name="rad"]:checked').val();
+			if(rad!=2&&rad!=3)
+			{
+				alert('请选中"存在邮箱"或"无手机有邮箱"条件');
+				return false;
+			}
+		})
+	   
+	   //手机号码，邮箱，日期选择验证
+	   $('#chaxun').click(function(){
+		   var statime=$('#statime').val();
+		   var endtime=$('#endtime').val();
+		   var phone=$('#phone').val();
+		   var phonereg=/^1\d{10}$/;
+		   var email=$('#email').val();
+		   var emailreg=/^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/;
+			
+		   if(statime==""&&endtime!="")
+			{
+				alert('你忘记输入开始日期');
+				return false;
+			}
+			if(statime!=""&&endtime=="")
+			{
+				alert('你忘记输入结束日期');
+				return false;
+			} 
+			if(phone!="")
+			{
+				if(!phonereg.test(phone))
+				{
+					alert('手机号码不合法');
+					$('#phone').focus();
+					return false;
+				}
+			}
+			if(email!="")
+			{
+				if(!emailreg.test(email))
+				{
+					alert('邮箱不合法');
+					$('#email').focus();
+					return false;
+				}
+			}
+	})	
+      //根据一级省份名获取地级市
+     $('#s1').change(function(){
+       var id = $("#s1").find('option:selected').attr("data-type_name");
+        $.ajax({
+            type: "POST",
+                url: "/Medicrm/changecity",
+                data:"cityid="+id,
+                success: function(msg){
+               	var s2 = $("#s2"); 
+                 $("option",s2).remove(); //清空原有的选项 
+                   var a=eval('('+msg+')');
+                   var option = "<option value='-1'>"+'--地级市--'+"</option>"; 
+                      $.each(a,function(index,array){ 
+                           option+="<option value='"+array['CityName']+"' data-type_name='"+array['CityID']+"'>"+array['CityName']+"</option>";  
+                     }); 
+                   s2.append(option); 
+                }
+         });     
+     })
+     //根据区获取区所属医院列表
+     $('#s2').change(function(){
+     	  var id = $("#s2").find('option:selected').attr("data-type_name");
+	      $.ajax({
+	          type: "POST",
+	              url: "/Medicrm/getcityhospital",
+	              data:"areaid="+id ,
+	              success: function(msg){
+	              var hp = $("#hospital"); 
+	               $("option",hp).remove(); //清空原有的选项 
+	                 var a=eval('('+msg+')');
+	                 var option="<option value='-1'>"+'--请选择医院--'+"</option>";
+	                    $.each(a,function(index,array){ 
+	                         option += "<option value='"+array['HospitalName']+"'>"+array['HospitalName']+"</option>"; 
+	                   }); 
+	                  hp.append(option); 
+	              }
+	        });    
+    	})
+    	 
+   	}); 
+
+		//用户详细数据同步
+	   function syc(id)
+	   {
+		    alertinfo('lightexport');
+	    	$.ajax({
+	   	       type: "POST",
+	   	       url: "/Medicrm/datasyc",
+	   	       data:"requesttime="+id,
+	   	       success: function(msg){
+	    		   closediv('lightexport');
+	       	       if(msg==0){
+	           	       alert("数据同步成功！");          	         
+	       	       }
+		       	   else if(msg==2){//说明token过期或者token错误，用户需要重新登录
+	          		   window.location.href='/Index/index';
+	          		   return;    
+	           	   }
+	       	       else{
+	    	      	   alert("数据同步失败！");
+	       	       }
+	   	        }
+	   	   	});
+	   }
+		//查询，导出excel，发送email，post提交到不同方法
+		function submitchaxun(){
+			document.forms["form1"].action="/Medicrm/customerlst";
+			document.forms["form1"].submit();
+			}
+		function submitdaochu(){
+			document.forms["form1"].action="/Medicrm/excelcustom";
+			document.forms["form1"].submit();
+			}
+		function submitemail(){
+			document.forms["form1"].action="/Medicrm/sendemail";
+			document.forms["form1"].submit();
+			}
+   </script>
+   <style type="text/css">
+		.searchinput{margin-top:10px;width:100px;}
+		.searchselect{margin-top:10px;width:120px;}
+		.searchcity{margin-top:10px;width:160px;}
+		.white_content {
+    	position:fixed; height:400px; width: 600px;z-index:1002;left:50%;top:50%; 
+    	margin-left:-300px;padding:1px;font-size:12px; 
+    	display:none;
+    }
+   </style>
+</head>
+<body class="fixed-top">
+<?php 
+	$clienttype=array(
+		"0"=>"医生",
+		"1"=>"护士",
+		"2"=>"医药行业",
+		"3"=>"医学生",
+		"4"=>"赔付宝",
+		"5"=>"其他人群",
+		"6"=>"实习医生"
+	);
+	$clientsource=array(
+		"0"=>"珍立拍用户",
+		"1"=>"睿医用户",
+		"2"=>"外部合作",
+		"3"=>"糖医生"
+	);
+?>
+   <?php require APPLICATION_PATH.'/views/scripts/index/header.phtml';?>
+   <div id="container" class="row-fluid">
+      <?php require APPLICATION_PATH.'/views/scripts/index/mainleft.phtml';?>
+      
+      <div id="main-content">
+         <!-- BEGIN PAGE CONTAINER-->
+         <div class="container-fluid">
+            <!-- BEGIN PAGE HEADER-->   
+            <div class="row-fluid">
+               <div class="span12">
+                   <h3 class="page-title">
+                                                客户信息
+                   </h3>
+                   <ul class="breadcrumb">
+                       <li>
+                           <a href="/Medicrm/default">首页</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li>
+                           <a href="/Medicrm/customerlst">客户信息管理</a>
+                           <span class="divider">/</span>
+                       </li>
+                       <li class="active">
+                                                                客户信息
+                       </li>
+                   </ul>
+               </div>
+            </div>
+           
+            <div id="page-wraper">
+                <div class="row-fluid">
+                    <div class="span12">
+                        <div class="widget blue">
+                            <div class="widget-title">
+                                <h4><i class="icon-reorder"></i>客户信息列表&nbsp;&nbsp;	<b><?= $this->lbcount?>&nbsp;条</b></h4>
+                            </div>
+
+                            <div style="margin-left:20px;">
+                            
+                              <form name="searchinfo"  method="post" id="form1">
+                               	<p><b>所在城市：</b>
+                                    <select id="s1" name="s1" class="searchcity">
+                                      <option value="-1">--省份--</option>
+                                      <?php foreach ($this->ccity as $cc){?>
+                                      <option <?=$this->selarr['s1']==$cc['CityName']?"selected":""?> value="<?=$cc['CityName']?>" data-type_name="<?=$cc['CityID']?>"><?php echo $cc['CityName']?></option>
+                                      <?php }?>
+                                    </select> 
+                                                              
+                                    <select id="s2" name="s2" class="searchcity"> 
+                                    <?php if (empty($this->s2)) {?>                                    
+                                      <option value="-1">--地级市--</option>
+                                     <?php }else {?>
+                                     <option><?=$this->s2 ?></option>
+                                     <?php }?>
+                                   </select>
+                                  &nbsp;&nbsp;
+                                  <b>所在医院：</b>  
+                                    <select id="hospital" name="hospital" class="searchcity">  
+                                    <?php if (empty($this->hospital)){?>
+                                      <option value="-1">--请选择医院--</option>
+                                     <?php }else {?>
+                                      <option><?=$this->hospital ?></option>
+                                     <?php }?>
+                                    </select>
+                                  
+                                   &nbsp;&nbsp;        
+                                  <b>所在科室：</b>
+                                    <select id="depart" name="depart" onchange="changepart();" class="searchcity">
+                                      <option value="-1">--请选择科室--</option>
+                                        <?php foreach ($this->deplist as $dep){?>
+                                        <option <?=$this->selarr['depart']==$dep['DepName']?"selected":""?> value="<?=$dep['DepName']?>"><?=$dep['DepName']?></option>
+                                        <?php }?>
+                                     </select>
+                                      &nbsp;&nbsp;
+                                     <b>客户类型：</b>
+                                  <select id="type" name="type" class="searchselect">
+                                   <option value="-1">--选择类型--</option>
+                                   <option value="0" <?=$this->selarr['type']=="0"?"selected":""?>>医生</option>
+                                   <option value="1" <?=$this->selarr['type']=="1"?"selected":""?>>护士</option>
+                                   <option value="2" <?=$this->selarr['type']=="2"?"selected":""?>>医药行业</option>
+                                   <option value="3" <?=$this->selarr['type']=="3"?"selected":""?>>医学生</option>
+                                   <option value="4" <?=$this->selarr['type']=="4"?"selected":""?>>赔付宝</option>
+                                   <option value="5" <?=$this->selarr['type']=="5"?"selected":""?>>其他人群</option>
+                                   <option value="6" <?=$this->selarr['type']=="6"?"selected":""?>>实习医生</option>
+                                 </select>
+								&nbsp;&nbsp;
+								<b>客户来源：</b>
+                                <select id="source" name="source" class="searchselect">
+                                 <option value="-1">--选择类型--</option>
+                                 <option value="0" <?=$this->selarr['source']=="0"?"selected":""?>>珍立拍用户</option>
+                                 <option value="1" <?=$this->selarr['source']=="1"?"selected":""?>>睿医用户</option>
+                                 <option value="2" <?=$this->selarr['source']=="2"?"selected":""?>>外部合作</option>
+                                 <option value="3" <?=$this->selarr['source']=="3"?"selected":""?>>糖医生</option>
+                               </select>
+                                &nbsp;&nbsp;
+                               <b>客户性别：</b>
+                              <select id="gender" name="gender" class="searchselect">
+                                   <option value="-1">--选择性别--</option>
+                                   <option value="0" <?=$this->selarr['gender']=="0"?"selected":""?>>女</option>
+                                   <option value="1" <?=$this->selarr['gender']=="1"?"selected":""?>>男</option>
+                              </select>
+                             </p>
+                                  
+							<p><b>选择日期：</b>
+                              <input type="text" size="10" onclick="WdatePicker();" name="statime" id="statime" value="<?php echo $this->selarr['statime'];?>" class="searchinput"></input>
+                              &nbsp;至&nbsp;
+                              <input type="text" size="10" onclick="WdatePicker();" name="endtime" id="endtime" value="<?php echo $this->selarr['endtime'];?>" class="searchinput"></input>
+                              &nbsp;&nbsp;
+                              <b>客户姓名：</b>
+                              <input type="text" id="name" name="name" class="searchinput" value="<?=$this->selarr['name']?>" />
+                               &nbsp;&nbsp;		
+							<b>珍立拍账号：</b>
+                              <input type="text" id="zlpaccount" name="zlpaccount" class="searchinput" value="<?=$this->selarr['zlpaccount']?>"/>
+                               &nbsp;&nbsp;
+	                            <b>珍立拍昵称：</b>
+                              <input type="text" id="nickname" name="nickname" class="searchinput" value="<?=$this->selarr['nickname']?>"/>
+                              &nbsp;&nbsp;
+							<b>手机号码：</b>
+                              <input id="phone" name="phone" type="text" class="searchinput" maxlength="11" value="<?=$this->selarr['phone']?>"/>
+                              &nbsp;&nbsp;
+                            <b>邮箱：</b>
+                              <input id="email" name="email" type="text" class="searchinput" value="<?=$this->selarr['email']?>" />
+                              &nbsp;&nbsp;
+							<b>微信：</b>
+                            <input id="wechat" name="wechat" type="text" class="searchinput" value="<?=$this->selarr['wechat']?>" />
+                            </p>
+							<p>
+                            <input type="radio" id="rad" name="rad" value="1"><font style="vertical-align:middle;">&nbsp;存在手机号</font>&nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type="radio" id="rad" name="rad" value="2"><font style="vertical-align:middle;">&nbsp;存在邮箱</font>&nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type="radio" id="rad" name="rad" value="3"><font style="vertical-align:middle;">&nbsp;无手机号有邮箱</font>&nbsp;&nbsp;&nbsp;&nbsp;
+                            <input type="radio" id="rad" name="rad" value="4"><font style="vertical-align:middle;">&nbsp;无手机号无邮箱</font>
+							&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            <a href='javascript:submitchaxun();' class="btn" style="text-align:center;color:black;width:80px;" id="chaxun">查询</a>
+
+                            <a href="/Medicrm/customerdetail" class="btn" style="text-align:center;color:black;width:80px;">添加客户</a>
+
+                            <a href='javascript:submitdaochu();' class="btn" style="text-align:center;color:black;width:80px;">导出excel</a>
+
+                            <a href="javascript:submitemail();" class="btn" style="text-align:center;color:black;width:80px;" id="emailsubmit">发送邮件</a>
+							</p>
+                      </form>
+                    </div>
+
+                            <div class="widget-body">
+                                <table class="table table-striped table-bordered table-advance table-hover" >
+                                    <thead>
+                                    <tr>
+                                        <th style="text-align:center;"><i class=""></i> 珍立拍账号</th>
+                                        <th style="text-align:center;"><i class=""></i> 珍立拍ID</th>
+                                        <th style="text-align:center;"><i class=""></i>珍立拍昵称</th>
+                                        <th style="text-align:center;"><i class=""></i> 客户姓名</th>
+                                        <th style="text-align:center;"><i class=""></i>客户性别</th>
+                                        <th style="text-align:center;"><i class=""></i> 电话</th>
+                                        <th style="text-align:center;"><i class=""></i> 邮箱</th>
+                                        <th style="text-align:center;"><i class=""></i> 医院</th>
+                                        <th style="text-align:center;"><i class=""></i> 科室</th>
+                                        
+                                        <th style="text-align:center;"><i class=""></i> 用户类型</th>
+                                        <th style="text-align:center;"><i class=""></i> 客户来源</th>
+                                        <th style="text-align:center;"><i class=""></i> </th>    
+                                    </tr>
+                                    </thead>
+                                    <?php foreach ($this->userlst as $user){?>
+                                    <tr>
+                                        <td style="text-align:center;"><?=$user["crm_ZlpAccount"]?></td>
+                                        <td style="text-align:center;"><?=$user["crm_ZlpID"]?></td>
+                                        <td style="text-align:center;"><?=$user["crm_ZlpNickName"]?></td>
+                                        <td style="text-align:center;"><?=$user["crm_ClientName"]?></td>    
+                                        <td style="text-align:center;"><?=empty($user["crm_ClientGender"])?"女":"男"?></td>   
+                                        <td style="text-align:center;"><?=$user["crm_ClientPhone"]?></td>
+                                        <td style="text-align:center;"><?=$user["crm_ClientEmail"]?></td>
+                                        <td style="text-align:center;"><?=$user["crm_ClientHospital"]?></td>
+                                        <td style="text-align:center;"><?=$user["crm_ClientSection"]?></td>
+                                        <td style="text-align:center;"><?=$clienttype[$user["crm_ClientType"]]?></td>
+                                        <td style="text-align:center;"><?=$clientsource[$user["crm_ClientSource"]]?></td>
+                                        <td style="text-align:center;">
+                                            <a title="查看" href="/Medicrm/customerdetail?upd=<?=$user['crm_ClientID']?>&ck=1"><button class="btn btn-success"><i class="icon-edit"></i></button></a>
+                                            <a title="编辑" href="/Medicrm/customerdetail?upd=<?=$user['crm_ClientID']?>"><button class="btn btn-primary"><i class="icon-pencil"></i></button></a>
+                                            <a title="删除" onclick="return confirm('确定删除该条信息么？');" href="/Medicrm/custdel?cid=<?=$user['crm_ClientID']?>"><button class="btn btn-danger"><i class="icon-trash "></i></button></a>
+                                            <a title="数据同步" onclick="syc(<?=$user['crm_ZlpID']?>);"><button class="btn btn-success"><i class="icon-refresh" ></i></button></a>
+                                        </td> 
+                                    </tr>
+                                    <?php }?>
+                              		</table>
+                                <br/>
+								<?php if ($this->lbcount>10){
+								 	require APPLICATION_PATH.'/views/scripts/index/pageclass.php';
+								 	$p=new PageClass();
+								 	$pagemsg=$p->pagemsg($this->spage,$this->cpage,"/Medicrm/customerlst",$this->urlpara);
+									}
+									echo "<div style='width:90%;margin:0 auto;text-align:right;'>$pagemsg</div>";
+								 ?> 
+								<?php if ($this->lbcount<=0){
+									require APPLICATION_PATH.'/views/scripts/index/noticemsg.phtml';
+									}
+								?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>     
+         </div>
+      </div>
+   </div>
+   <?php require APPLICATION_PATH.'/views/scripts/index/bottom.phtml';?>
+   <script type="text/javascript" src="/js/jquery-ui-1.9.2.custom.min.js"></script>
+   <script>
+        function loadfun()
+        {
+        	 $("#khxx").attr("class", "active");
+        	 $("#khgl").attr("class", "active");
+        }
+        loadfun();
+
+        function alertinfo(id){
+        	$("#fade").css("height",Math.min(document.documentElement.scrollHeight,document.body.scrollHeight));
+        	var obj =document.getElementById(id); 
+        	var W =screen.width;//取得屏幕分辨率宽度
+        	var H =screen.height;//取得屏幕分辨率高度
+        	var yScroll;//取滚动条高度
+        	if(self.pageYOffset){ 
+        		yScroll =self.pageYOffset; 
+        	}
+        	else if(document.documentElement&&document.documentElement.scrollTop){ 
+        		yScroll =document.documentElement.scrollTop; 
+        	}
+        	else if(document.body){
+        		yScroll =document.body.scrollTop; 
+        	}
+        	if(id=='lightexport')
+        	{
+        		obj.style.top=(H/2-90-100)+"px";
+        	}
+        	else
+        	{
+        		obj.style.top=(H/2-90-200)+"px";
+        	}	
+        	document.getElementById("fade").style.display="block";
+        	obj.style.display="block";
+        	var scrollstyle =scrolls();
+        	scrollstyle.style.overflowX="hidden";
+        	//scrollstyle.style.overflowY="auto"; 
+        } 
+        //关闭弹出层	   
+        function closediv(id){	
+        	document.getElementById(id).style.display="none"; 
+        	document.getElementById("fade").style.display="none";
+        	var scrollstyle =scrolls(); 
+        	scrollstyle.style.overflowY="auto"; 
+        	scrollstyle.style.overflowX="hidden";
+        }
+        //取浏览器类型	   
+        function scrolls(){	
+        	var temp_h1 =document.body.clientHeight; 
+        	var temp_h2 =document.documentElement.clientHeight; 
+        	var isXhtml =(temp_h2<=temp_h1&&temp_h2!=0)?true:false; 
+        	var htmlbody =isXhtml?document.documentElement:document.body;
+        	return htmlbody; 
+        }
+   </script>
+   <div id="lightexport" class="white_content" style="display:none;margin-left:-125px;border:0;background-color:white;height:50px; width:250px;border:5px solid #484848;text-align:center;line-height:40px;">
+  <img src="/images/054.gif" style="vertical-align:middle;"/>&nbsp;&nbsp;<font style="font-size:17px;vertical-align:middle;color:#484848">正在同步数据。。。</font>
+  </div>
+  <div id="fade" class="black_overlay"  style="display:none"></div>
+</body>
+</html>
